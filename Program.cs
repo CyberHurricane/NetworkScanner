@@ -6,10 +6,10 @@ using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
 
 
-
 namespace NetworkScanner
 {
     {
+
         static void Main()
         {
             UserInput();
@@ -26,6 +26,9 @@ namespace NetworkScanner
                 Console.WriteLine(Results);
             }
             Console.ReadLine();
+        static void Main(string[] args)
+        {
+            UserInput();
         }
         static void UserInput()
         {
@@ -35,7 +38,6 @@ namespace NetworkScanner
             string Input = I.ToUpper();
             if (Input == "Y")
             {
-
                 return;
             }
             else if (Input == "N")
@@ -46,9 +48,7 @@ namespace NetworkScanner
             {
                 Console.Clear();
                 Console.WriteLine("Please enter a valid option");
-
                 UserInput();
-
             }
         }
     }
@@ -80,7 +80,6 @@ namespace NetworkScanner
             int octet2 = Int32.Parse(DNS[1]);
             int octet3 = Int32.Parse(DNS[2]);
             int octet4 = Int32.Parse(DNS[3]);
-
             Console.WriteLine($"{octet1}.{octet2}.{octet3}.{octet4}");
             /*
                         for (int i = 0; octet1 != 254; i++)
@@ -117,13 +116,10 @@ namespace NetworkScanner
                 {
                     string Data = HostIP + " : " + "Error, Host Name Not Found";
                     //Console.WriteLine(Data);
-
                     SharedData.DataDump[index] = Data;
                     index++; // Increment index for next entry
                     return;
                 }
-
-
             }
         }
     }
@@ -132,7 +128,6 @@ namespace NetworkScanner
         public static int[] ArrayOctet4 = new int[254];
         public static string[] IPaddressFromArp;
         public static string[] DataDump;
-
     }
     /*public class ICMP
     {
@@ -155,8 +150,6 @@ namespace NetworkScanner
             {
                 Console.WriteLine(response.Status);
             }
-
-
             return DNSAddress;
         }
     }
@@ -170,7 +163,6 @@ namespace NetworkScanner
             int octet2 = Int32.Parse(DNS[1]);
             int octet3 = Int32.Parse(DNS[2]);
             int octet4 = Int32.Parse(DNS[3]);
-
             Process process = new Process();
             process.StartInfo.FileName = "powershell.exe";
             process.StartInfo.Arguments = "arp -a";
@@ -182,20 +174,15 @@ namespace NetworkScanner
                 process.Start();
                 string output = process.StandardOutput.ReadToEnd();
                 process.WaitForExit();
-
                 string pattern = $@"\b({octet1})\.(?:25[0-4]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-4]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-4]|2[0-4][0-8]|[01]?[0-9][0-9]?)\b";
                 MatchCollection matches = Regex.Matches(output, pattern);
-
                 SharedData.IPaddressFromArp = new string[matches.Count];
                 int index = 0;
-
                 foreach (Match match in matches)
                 {
                     SharedData.IPaddressFromArp[index++] = match.Value;
                 }
                 int ArrayLength = SharedData.IPaddressFromArp.Length;
-
-
                 return SharedData.IPaddressFromArp;
             }
             catch (Exception ex)
@@ -203,22 +190,71 @@ namespace NetworkScanner
                 Console.WriteLine(ex);
                 return null;
             }
-
         }
-
-
     }
    /* internal class UdpBroadcast
+        }
+    }
+    public class UserInput
     {
-        public static void SendBroadcast(string message, int port)
+    }
+    public class ICMP
+    {
+
+    }
+    public class UdpBroadcast
+    {
+        public static void SendBroadcast()
         {
             using (UdpClient UdpClient = new UdpClient())
             {
-                UdpClient.EnableBroadcast = true;
-                IPEndPoint endPoint = new IPEndPoint(IPAddress.Broadcast, port);
-                byte[] bytes = Encoding.UTF8.GetBytes(message);
-                UdpClient.Send(bytes, bytes.Length, endPoint);
-                Console.WriteLine("Broadcast message sent: " + message);
+                string IP = "10.0.0.255";
+                int Port = 55000;
+                string message = "Hello";
+
+                byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+
+                using (UdpClient udpClient = new UdpClient())
+                    try
+                    {
+                        udpClient.EnableBroadcast = true;
+                        IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(IP), Port);
+                        udpClient.Send(messageBytes, messageBytes.Length, endPoint);
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.ToString());
+                    }
+
+                StartListener(Port);
+            }
+            finally
+            {
+                Console.ReadLine();
+                listener.Close();
+            }
+        }
+        public static void StartListener(int Port)
+        {
+            UdpClient listener = new UdpClient(Port);
+            IPEndPoint groupEP = new IPEndPoint(IPAddress.Any, Port);
+            listener.Client.ReceiveTimeout = 50000;
+            try
+            {
+                while (true)
+                {
+                    Console.WriteLine("Waiting for broadcast");
+                    byte[] bytes = listener.Receive(ref groupEP);
+
+                    Console.WriteLine($"Received broadcast from {groupEP} :");
+                    Console.WriteLine($" {Encoding.ASCII.GetString(bytes, 0, bytes.Length)}");
+                    Console.ReadLine();
+                }
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine(ex);
             }
             finally
             {
